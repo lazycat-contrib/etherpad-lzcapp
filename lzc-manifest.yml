@@ -1,0 +1,65 @@
+application:
+  subdomain: etherpad
+  multi_instance: false
+  upstreams:
+    - location: /
+      backend: http://etherpad:9001/
+  injects:
+    - id: admin-login-autofill
+      on: browser
+      when:
+        - /admin
+      do:
+        - src: builtin://simple-inject-password
+          params:
+            user: admin
+            password: |-
+              {{ .U.admin_password | replace "\r" "" | replace "\n" "\n              " }}
+            userSelector: 'input[name="username"]'
+            passwordSelector: 'input[name="password"]'
+            autoSubmit: false
+services:
+  etherpad:
+    # upstream: docker.io/etherpad/etherpad:3.3.12
+    image: docker.1ms.run/etherpad/etherpad:3.3.12
+    run_as: "5001:0"
+    depends_on:
+      - postgres
+    environment:
+      - NODE_ENV=production
+      - PORT=9001
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=etherpad
+      - DB_USER=etherpad
+      - DB_PASS={{ stable_secret "etherpad-postgres" }}
+      - DB_CHARSET=utf8mb4
+      - DEFAULT_PAD_TEXT=Welcome to Etherpad!
+      - DISABLE_IP_LOGGING=true
+      - TRUST_PROXY=true
+      - SOFFICE=null
+      - |-
+        ADMIN_PASSWORD={{ .U.admin_password | replace "\r" "" | replace "\n" "\n        " }}
+    binds:
+      - /lzcapp/var/plugins:/opt/etherpad-lite/src/plugin_packages
+      - /lzcapp/var/etherpad:/opt/etherpad-lite/var
+  postgres:
+    # upstream: docker.io/library/postgres:15-alpine
+    image: docker.1ms.run/library/postgres:15-alpine
+    environment:
+      - POSTGRES_DB=etherpad
+      - POSTGRES_USER=etherpad
+      - POSTGRES_PASSWORD={{ stable_secret "etherpad-postgres" }}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    binds:
+      - /lzcapp/var/postgres:/var/lib/postgresql/data
+usage: |
+  Etherpad 提供实时多人文档编辑，使用内置 PostgreSQL 容器持久保存文稿及修订记录。
+  保留懒猫入口认证，文档编辑不另建账号；授权用户共用同一应用，未配置每用户文稿隔离，请只向可信成员授予访问权限。
+  管理后台 /admin 使用 admin 账号，密码来自部署参数；仅自动填充，不自动提交。应用访问者可能通过填充使用管理账号，切勿向不可信人员开放应用。
+  管理员可安装插件；插件代码需自行审查。已持久化插件目录及应用运行目录，数据库与文稿均为应用内部数据，卸载前务必备份。
+  Web 管理界面对 settings.json 的直接修改没有单独持久化，重建容器可能恢复环境变量配置；优先用部署参数维护管理员密码。
+  使用非root UID5001及目录属主映射，最低系统版本1.6.0。数据库未对外开放。
+  未包含 LibreOffice 转换服务，不保证所有文档格式导入导出。无匿名公共路径、smoke作业或文件选择器拦截。
+  未验证懒猫实机启动、数据库初始化、管理登录填充、多人编辑、插件安装、备份或重启持久化。

@@ -1,0 +1,12 @@
+params:
+  - id: admin_password
+    type: secret
+    name: Administrator password
+    description: Password for the shared admin account. Only grant application access to trusted members.
+    default_value: "$random(len=20)"
+    optional: false
+locales:
+  zh:
+    admin_password:
+      name: 管理员密码
+      description: 共享 admin 管理员密码，后台会自动填充；仅向可信成员授予应用访问权限。

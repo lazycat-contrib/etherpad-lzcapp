@@ -1,0 +1,18 @@
+package: community.lazycat.app.etherpad
+version: 3.3.12
+name: Etherpad
+description: Real-time collaborative document editor with PostgreSQL-backed document storage.
+min_os_version: "1.6.0"
+homepage: https://github.com/ether/etherpad
+author: ether
+license: Apache-2.0
+permissions:
+  required:
+    - net.internet
+locales:
+  zh:
+    name: Etherpad
+    description: 实时协作文档编辑器，使用 PostgreSQL 持久保存文稿及修订记录。
+  en:
+    name: Etherpad
+    description: Real-time collaborative document editor with PostgreSQL-backed document storage.
